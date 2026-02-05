@@ -37,25 +37,26 @@ end
 
 %% =========================
 %% HUB-AND-SPOKE LINKS
+%% (labels made single-token to avoid wrapping)
 %% =========================
-hubvnet ---|"VNet&nbsp;peering"| dpvnet
-hubvnet ---|"VNet&nbsp;peering"| dsvnet
+hubvnet ---|"VNet-peering"| dpvnet
+hubvnet ---|"VNet-peering"| dsvnet
 
-dns -. "Private&nbsp;DNS&nbsp;VNet&nbsp;links" .-> dpvnet
-dns -. "Private&nbsp;DNS&nbsp;VNet&nbsp;links" .-> dsvnet
+dns -. "Private-DNS-VNet-links" .-> dpvnet
+dns -. "Private-DNS-VNet-links" .-> dsvnet
 
 %% =========================
 %% DS internal wiring
 %% =========================
 dsvnet --> pesub
-pesub -->|"Private&nbsp;Endpoint(s)"| amlws
+pesub -->|"Private-Endpoint(s)"| amlws
 dscore --> amlws
 mnet --> compute
 
 %% =========================
 %% Data Platform addition (ADLS + PE)
 %% =========================
-dpvnet -->|"Private&nbsp;Endpoint(s)"| adls
+dpvnet -->|"Private-Endpoint(s)"| adls
 
 %% =========================
 %% Fabric relationship
