@@ -1,48 +1,68 @@
-%%{init: {'flowchart': {'curve': 'linear', 'nodeSpacing': 90, 'rankSpacing': 110}} }%%
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Arial','fontSize':'12px'},'flowchart':{'curve':'linear','nodeSpacing':60,'rankSpacing':70}}}%%
 flowchart LR
-
+%% =========================
+%% HUB (shared services)
+%% =========================
 subgraph HUB["Connectivity / Hub Subscription"]
-    hubvnet["Hub VNet (Connectivity)"]
-    dns["Private DNS Zones + DNS Resolver (shared / central)"]
+    hubvnet["Hub VNet<br/>(Connectivity)"]
+    dns["Private DNS Zones + DNS Resolver<br/>(shared / central)"]
 end
 
+%% =========================
+%% DATA PLATFORM SPOKE
+%% =========================
 subgraph DP["Data Platform Subscription (Spoke)"]
-    dpvnet["Landing Zone VNet (min subnets + PE subnet if needed)"]
-    dpcore["Core RG: Key Vault + Monitoring (optional Storage)"]
-    adls["ADLS Gen2 Storage Account (Blob + DFS)"]
-    cap["Fabric Capacity (Azure resource)"]
+    dpvnet["Landing Zone VNet<br/>(min subnets + PE subnet if needed)"]
+    dpcore["Core RG:<br/>Key Vault + Monitoring<br/>(+ optional Storage)"]
+    adls["ADLS Gen2 Storage Account<br/>(Blob + DFS)"]
+    cap["Fabric Capacity<br/>(Azure resource)"]
 end
 
-fabric["Microsoft Fabric (SaaS) Workspaces / OneLake"]
+fabric["Microsoft Fabric (SaaS)<br/>Workspaces / OneLake"]
 
+%% =========================
+%% DATA SCIENCE SPOKE
+%% =========================
 subgraph DS["Data Science Subscription (Spoke)"]
-    dsvnet["Landing Zone VNet (workload subnet + PE subnet)"]
+    dsvnet["Landing Zone VNet<br/>(workload subnet + PE subnet)"]
     pesub["Private Endpoint Subnet"]
-    dscore["Core RG: Key Vault + Storage + ACR + Monitoring"]
-    amlws["Azure ML Workspace (control plane)"]
+    dscore["Core RG:<br/>Key Vault + Storage + ACR<br/>+ Monitoring"]
+    amlws["Azure ML Workspace<br/>(control plane)"]
 
     subgraph AML["Azure ML - Managed Network Isolation"]
         mnet["Microsoft Managed VNet"]
-        compute["Training + Batch/Online Compute"]
+        compute["Training + Batch/Online<br/>Compute"]
     end
 end
 
-hubvnet ---|"VNet peering"| dpvnet
-hubvnet ---|"VNet peering"| dsvnet
+%% =========================
+%% HUB-AND-SPOKE LINKS
+%% =========================
+hubvnet ---|"VNet&nbsp;peering"| dpvnet
+hubvnet ---|"VNet&nbsp;peering"| dsvnet
 
-dns -. "Private DNS VNet links" .-> dpvnet
-dns -. "Private DNS VNet links" .-> dsvnet
+dns -. "Private&nbsp;DNS&nbsp;VNet&nbsp;links" .-> dpvnet
+dns -. "Private&nbsp;DNS&nbsp;VNet&nbsp;links" .-> dsvnet
 
+%% =========================
+%% DS internal wiring
+%% =========================
 dsvnet --> pesub
-pesub -->|"Private Endpoint(s)"| amlws
+pesub -->|"Private&nbsp;Endpoint(s)"| amlws
 dscore --> amlws
 mnet --> compute
 
-dpvnet -->|"Private Endpoint(s)"| adls
+%% =========================
+%% Data Platform addition (ADLS + PE)
+%% =========================
+dpvnet -->|"Private&nbsp;Endpoint(s)"| adls
 
+%% =========================
+%% Fabric relationship
+%% =========================
 cap --> fabric
-compute -. "HTTPS to OneLake/Fabric (Entra ID + Fabric Conditional Access)" .-> fabric
+compute -. "HTTPS to OneLake/Fabric<br/>(Entra ID + Fabric Conditional Access)" .-> fabric
 
-note["Open item (BIGGEST RISK): Fabric Conditional Access behavior for AML Managed VNet traffic. Option A: CA exception for AML managed network. Option B: Customer VNet injection (fallback)."]
+note["Open item (BIGGEST RISK):<br/>How will Fabric Conditional Access treat traffic from AML Managed VNet?<br/>Option A: Conditional Access exception to allow AML Managed VNet.<br/>Option B (fallback): Customer VNet injection."]
 note --- fabric
 note --- mnet
